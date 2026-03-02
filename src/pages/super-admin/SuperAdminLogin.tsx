@@ -371,7 +371,7 @@ const SuperAdminLogin = () => {
         {/* Copyright */}
         <div className="text-center mt-8 lg:col-span-2">
           <p className="text-xs text-gray-500">
-            © 2024 ClinicPro. All rights reserved.
+            © 2026 ClinicPro. All rights reserved.
           </p>
         </div>
       </motion.div>

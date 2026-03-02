@@ -251,7 +251,7 @@ const SuperAdminSidebar: React.FC<SuperAdminSidebarProps> = ({ isOpen, onClose }
         
         <div className="mt-4 text-center">
           <div className="text-xs text-slate-500">
-            © 2024 ClinicPro
+            © 2026 ClinicPro
           </div>
         </div>
       </div>
