@@ -1027,6 +1027,20 @@ Generated on: ${new Date().toLocaleString()}
                       )}
                     </div>
                   )}
+
+                  {/* Report Actions */}
+                  <div className="pt-6 border-t flex flex-wrap gap-3">
+                    <Button variant="outline" asChild>
+                      <a href={apiService.getFileUrl(currentAnalysis.report_url)} target="_blank" rel="noopener noreferrer">
+                        <FileImage className="w-4 h-4 mr-2" />
+                        {t("View Original Report")}
+                      </a>
+                    </Button>
+                    <Button variant="outline" onClick={() => handleDownloadReport(currentAnalysis)}>
+                      <Download className="w-4 h-4 mr-2" />
+                      {t("Download Analysis")}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>
@@ -1090,28 +1104,25 @@ Generated on: ${new Date().toLocaleString()}
                     label: t("Patient"),
                     render: (analysis) => (
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {(() => {
-                              if (analysis.patient_id && typeof analysis.patient_id === 'object') {
-                                const firstInitial = analysis.patient_id.first_name?.charAt(0) || '';
-                                const lastInitial = analysis.patient_id.last_name?.charAt(0) || '';
-                                return (firstInitial + lastInitial).toUpperCase() || 'PA';
-                              }
-                              return String(analysis.patient_id || '').slice(0, 2).toUpperCase() || 'PA';
-                            })()}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="w-10 h-10 rounded overflow-hidden border bg-muted flex flex-shrink-0 items-center justify-center">
+                          {analysis.file_type === 'application/pdf' ? (
+                            <FileText className="w-5 h-5 text-red-500" />
+                          ) : (
+                            <img 
+                              src={apiService.getFileUrl(analysis.report_url)} 
+                              alt="Report" 
+                              className="w-full h-full object-cover"
+                            />
+                          )}
+                        </div>
                         <div>
                           <p className="font-medium">
-                            {(() => {
-                              if (analysis.patient_id && typeof analysis.patient_id === 'object') {
-                                const firstName = analysis.patient_id.first_name || '';
-                                const lastName = analysis.patient_id.last_name || '';
-                                return `${firstName} ${lastName}`.trim() || 'Unknown Patient';
-                              }
-                              return String(analysis.patient_id || 'Unknown Patient');
-                            })()}
+                            {analysis.patient_id && typeof analysis.patient_id === 'object' 
+                              ? `${analysis.patient_id.first_name || ''} ${analysis.patient_id.last_name || ''}`.trim() 
+                              : t('Unknown Patient')}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {analysis.file_type === 'application/pdf' ? t('PDF Report') : t('Image Report')}
                           </p>
                         </div>
                       </div>

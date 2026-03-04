@@ -1,8 +1,8 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { 
-  Lead, 
-  Prescription, 
-  CreatePrescriptionRequest, 
+import {
+  Lead,
+  Prescription,
+  CreatePrescriptionRequest,
   PrescriptionStats,
   TestCategory,
   SampleType,
@@ -259,13 +259,13 @@ const getApiBaseUrl = (): string => {
     return 'https://clinicpro-api.dev3.tech/api';
   }
 
-  // Default to localhost for development
-  return 'http://localhost:3000/api';
+  // Fallback for local development
+  return 'http://localhost:5000/api';
 };
 
 const API_BASE_URL = getApiBaseUrl();
 
-// Create axios instance
+// Auth Methods
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -322,7 +322,7 @@ apiClient.interceptors.response.use(
       // Handle unauthorized access, but only redirect if not already on auth pages
       const currentPath = window.location.pathname;
       const isAuthPage = currentPath === '/login' || currentPath === '/register' || currentPath === '/forgot-password';
-      
+
       if (!isAuthPage) {
         // Clear cookies instead of localStorage
         clinicCookies.clearClinicData();
@@ -758,6 +758,19 @@ export interface CreateDepartmentRequest {
 
 // API Methods
 class ApiService {
+  /**
+   * Constructs the full URL for a file stored on the server
+   * @param path The relative or absolute path of the file
+   * @returns The full URL to the file
+   */
+  getFileUrl(path: string | undefined): string {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+
+    // Remove /api from the base URL to get the root server URL
+    const rootUrl = API_BASE_URL.replace(/\/api$/, '');
+    return `${rootUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+  }
   // Authentication
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', credentials);
@@ -789,7 +802,7 @@ class ApiService {
     tenantScoped?: boolean;
   }): Promise<PatientsResponse> {
     const queryParams = { ...params };
-    
+
     // If tenant-scoped is requested, ensure we get tenant-filtered results
     // This is especially important for super_admin users
     if (params?.tenantScoped) {
@@ -798,7 +811,7 @@ class ApiService {
       // The backend should automatically apply tenant filtering based on auth context
       // No additional parameter needed - the middleware handles this
     }
-    
+
     const response = await apiClient.get<PatientsResponse>('/patients', { params: queryParams });
     return response.data;
   }
@@ -831,13 +844,13 @@ class ApiService {
     ageGroups: Array<{ ageGroup: string; count: number }>;
   }> {
     const queryParams: any = {};
-    
+
     // If tenant-scoped is requested, ensure we get tenant-filtered results
     if (params?.tenantScoped) {
       // The backend should automatically apply tenant filtering based on auth context
       // No additional parameter needed - the middleware handles this
     }
-    
+
     const response = await apiClient.get<ApiResponse<{
       totalPatients: number;
       newThisMonth: number;
@@ -858,7 +871,7 @@ class ApiService {
     tenantScoped?: boolean;
   }): Promise<UsersResponse> {
     const queryParams = { ...params };
-    
+
     // If tenant-scoped is requested, ensure we get tenant-filtered results
     // This is especially important for super_admin users
     if (params?.tenantScoped) {
@@ -867,7 +880,7 @@ class ApiService {
       // The backend should automatically apply tenant filtering based on auth context
       // No additional parameter needed - the middleware handles this
     }
-    
+
     const response = await apiClient.get<UsersResponse>('/users', { params: queryParams });
     return response.data;
   }
@@ -942,7 +955,7 @@ class ApiService {
   async uploadAvatar(file: File): Promise<{ avatar: string }> {
     const formData = new FormData();
     formData.append('avatar', file);
-    
+
     const response = await apiClient.post<ApiResponse<{ avatar: string }>>('/users/avatar', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
@@ -1085,7 +1098,7 @@ class ApiService {
         };
       };
     }>('/inventory', { params });
-    
+
     // Transform the backend response to match the expected PaginatedResponse format
     return {
       success: response.data.success,
@@ -1274,7 +1287,7 @@ class ApiService {
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     try {
       const response = await apiClient.get('/health');
-      
+
       // Handle different response formats
       if (response.data?.data) {
         // Standard ApiResponse format
@@ -1511,7 +1524,7 @@ class ApiService {
     try {
       // First, get the original methodology
       const original = await this.getTestMethodology(id);
-      
+
       // Create a new methodology with modified name and code
       const duplicatedData: CreateTestMethodologyRequest = {
         name: `${original.name} (Copy)`,
@@ -1525,7 +1538,7 @@ class ApiService {
         limitations: original.limitations || "",
         isActive: false, // Start as inactive for safety
       };
-      
+
       // Create the new methodology
       return await this.createTestMethodology(duplicatedData);
     } catch (error) {
@@ -1783,7 +1796,7 @@ class ApiService {
         };
       };
     }>('/test-reports', { params });
-    
+
     // Transform response to match expected format
     return {
       success: response.data.success,
@@ -1959,14 +1972,14 @@ class ApiService {
         };
       };
     }>('/payments', { params });
-    
+
     // Defensive checks for response structure
     if (!response.data) {
       throw new Error('Invalid API response: missing data');
     }
-    
+
     const data = response.data.data;
-    
+
     // Handle missing data object with defaults
     if (!data) {
       return {
@@ -1982,10 +1995,10 @@ class ApiService {
         }
       };
     }
-    
+
     const payments = data.items || [];
     const pagination = data.pagination;
-    
+
     // Handle missing pagination data with defaults
     if (!pagination) {
       return {
@@ -2001,7 +2014,7 @@ class ApiService {
         }
       };
     }
-    
+
     // Transform response to match expected format (backend already returns correct format)
     return {
       success: response.data.success,
@@ -2090,7 +2103,7 @@ class ApiService {
     tenantScoped?: boolean;
   }): Promise<PaginatedResponse<Payroll>> {
     const queryParams = { ...params };
-    
+
     // If tenant-scoped is requested, ensure we get tenant-filtered results
     // This is especially important for super_admin users
     if (params?.tenantScoped) {
@@ -2111,14 +2124,14 @@ class ApiService {
         };
       };
     }>('/payroll', { params: queryParams });
-    
+
     // Defensive checks for response structure
     if (!response.data) {
       throw new Error('Invalid API response: missing data');
     }
-    
+
     const data = response.data.data;
-    
+
     // Handle missing data object with defaults
     if (!data) {
       return {
@@ -2134,10 +2147,10 @@ class ApiService {
         }
       };
     }
-    
+
     const payrolls = data.items || [];
     const pagination = data.pagination;
-    
+
     // Handle missing pagination data with defaults
     if (!pagination) {
       return {
@@ -2153,7 +2166,7 @@ class ApiService {
         }
       };
     }
-    
+
     // Transform response to match expected format (backend already returns correct format)
     return {
       success: response.data.success,
@@ -2614,9 +2627,9 @@ class ApiService {
     return response.data.data!;
   }
 
-  async getXrayAnalyses(params: { 
-    page?: number; 
-    limit?: number; 
+  async getXrayAnalyses(params: {
+    page?: number;
+    limit?: number;
     status?: string;
     date_from?: string;
     date_to?: string;
@@ -2631,7 +2644,7 @@ class ApiService {
     };
   }> {
     const queryParams = { ...params };
-    
+
     // If tenant-scoped is requested, ensure we get tenant-filtered results
     // This is especially important for super_admin users
     if (params?.tenantScoped) {
@@ -2640,7 +2653,7 @@ class ApiService {
       // The backend should automatically apply tenant filtering based on auth context
       // No additional parameter needed - the middleware handles this
     }
-    
+
     const response = await apiClient.get<{
       success: boolean;
       data: XrayAnalysis[];
@@ -2662,9 +2675,9 @@ class ApiService {
     return response.data.data!;
   }
 
-  async getPatientXrayAnalyses(patientId: string, params: { 
-    page?: number; 
-    limit?: number; 
+  async getPatientXrayAnalyses(patientId: string, params: {
+    page?: number;
+    limit?: number;
   } = {}): Promise<{
     analyses: XrayAnalysis[];
     pagination: {
@@ -2692,14 +2705,14 @@ class ApiService {
 
   async getXrayAnalysisStats(params?: { tenantScoped?: boolean }): Promise<XrayAnalysisStats> {
     const queryParams: any = {};
-    
+
     // If tenant-scoped is requested, ensure we get tenant-filtered results
     // This is especially important for super_admin users
     if (params?.tenantScoped) {
       // The backend should automatically apply tenant filtering based on auth context
       // No additional parameter needed - the middleware handles this
     }
-    
+
     const response = await apiClient.get<ApiResponse<XrayAnalysisStats>>('/xray-analysis/stats', { params: queryParams });
     return response.data.data!;
   }
@@ -2735,9 +2748,9 @@ class ApiService {
     return response.data.data!;
   }
 
-  async getAITestAnalyses(params: { 
-    page?: number; 
-    limit?: number; 
+  async getAITestAnalyses(params: {
+    page?: number;
+    limit?: number;
     status?: string;
     search?: string;
     date_from?: string;
@@ -2801,8 +2814,8 @@ class ApiService {
     return response.data.data!;
   }
 
-  async getAITestComparisons(params: { 
-    page?: number; 
+  async getAITestComparisons(params: {
+    page?: number;
     limit?: number;
     status?: string;
     patient_id?: string;
@@ -2857,15 +2870,15 @@ class ApiService {
    * @param params Optional parameters for pagination and filtering
    * @param tenantScoped Whether to force tenant-scoped filtering (default: false for backward compatibility)
    */
-  async getClinics(params?: { 
-    page?: number; 
-    limit?: number; 
+  async getClinics(params?: {
+    page?: number;
+    limit?: number;
     tenantScoped?: boolean;
   }): Promise<{ success: boolean; data: any[]; total: number }> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
     if (params?.limit) queryParams.append('limit', params.limit.toString());
-    
+
     // If tenant-scoped is requested, use the user/clinics endpoint with global=false
     // This ensures even super_admin users get tenant-filtered results
     if (params?.tenantScoped) {
@@ -2873,7 +2886,7 @@ class ApiService {
       const url = `/user/clinics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
       return this.get(url);
     }
-    
+
     // Default behavior - use clinics endpoint (may return all clinics for super_admin)
     const url = `/clinics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return this.get(url);

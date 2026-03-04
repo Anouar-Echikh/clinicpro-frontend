@@ -780,10 +780,26 @@ Generated on: ${new Date().toLocaleString()}
                     {t("Analysis Results")}
                   </CardTitle>
                   <CardDescription>
-                    {t("AI-generated analysis for")} {currentAnalysis?.patient_id?.first_name || t('Unknown')} {currentAnalysis?.patient_id?.last_name || t('Patient')}
+                    {t("AI-generated analysis for")} {currentAnalysis?.patient_id && typeof currentAnalysis.patient_id === 'object' ? `${currentAnalysis.patient_id.first_name || ''} ${currentAnalysis.patient_id.last_name || ''}`.trim() : t('Patient')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                  {/* Analyzed Image */}
+                  <div className="relative aspect-video rounded-lg overflow-hidden border bg-black/5 group">
+                    <img 
+                      src={apiService.getFileUrl(currentAnalysis.image_url)} 
+                      alt="Analyzed X-ray" 
+                      className="w-full h-full object-contain"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button variant="secondary" size="sm" asChild>
+                        <a href={apiService.getFileUrl(currentAnalysis.image_url)} target="_blank" rel="noopener noreferrer">
+                          <Eye className="w-4 h-4 mr-2" />
+                          {t("View Full Image")}
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
                   {/* Analysis Text */}
                   <div className="prose max-w-none">
                     <div className="bg-muted p-4 rounded-lg">
@@ -964,6 +980,7 @@ Generated on: ${new Date().toLocaleString()}
             </CardContent>
           </Card>
         </TabsContent>
+
       </Tabs>
 
       {/* View Report Modal */}
@@ -980,142 +997,151 @@ Generated on: ${new Date().toLocaleString()}
               {t("X-ray Analysis Report")}
             </DialogTitle>
             <DialogDescription>
-              {t("Detailed analysis report for")} {viewModalAnalysis?.patient_id?.first_name || t('Unknown')} {viewModalAnalysis?.patient_id?.last_name || t('Patient')}
+              {t("Detailed analysis report for")} {viewModalAnalysis?.patient_id && typeof viewModalAnalysis.patient_id === 'object' ? `${viewModalAnalysis.patient_id.first_name || ''} ${viewModalAnalysis.patient_id.last_name || ''}`.trim() : t('Patient')}
             </DialogDescription>
           </DialogHeader>
 
           {viewModalAnalysis && (
-            <div className="space-y-6">
-              {/* Patient & Analysis Info */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-card-foreground">{t("Patient Information")}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback>
-                          {viewModalAnalysis.patient_id?.first_name?.[0] || 'U'}{viewModalAnalysis.patient_id?.last_name?.[0] || 'P'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">
-                          {viewModalAnalysis.patient_id?.first_name || t('Unknown')} {viewModalAnalysis.patient_id?.last_name || t('Patient')}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {viewModalAnalysis.patient_id?.phone || 'N/A'}
-                        </p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 py-4">
+                {/* Left Side: X-ray Image */}
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <FileImage className="w-4 h-4" />
+                        {t("X-ray Image")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="relative aspect-square rounded-lg overflow-hidden border bg-black/5">
+                        <img 
+                          src={apiService.getFileUrl(viewModalAnalysis.image_url)} 
+                          alt="Patient X-ray" 
+                          className="w-full h-full object-contain"
+                        />
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      <div className="mt-4 flex justify-center">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={apiService.getFileUrl(viewModalAnalysis.image_url)} target="_blank" rel="noopener noreferrer">
+                            <Eye className="w-4 h-4 mr-2" />
+                            {t("Open in New Tab")}
+                          </a>
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm font-medium text-card-foreground">{t("Analysis Details")}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="space-y-1">
-                      <p className="text-sm text-foreground">
-                        <span className="font-medium">{t("Date")}:</span> {new Date(viewModalAnalysis.analysis_date).toLocaleDateString()}
-                      </p>
-                      <p className="text-sm text-foreground">
-                        <span className="font-medium">{t("Doctor")}:</span> {viewModalAnalysis.doctor_id?.first_name || t('Unknown')} {viewModalAnalysis.doctor_id?.last_name || t('Doctor')}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{t("Status")}:</span>
-                        <Badge className={getStatusColor(viewModalAnalysis.status)}>
-                          <span className="flex items-center gap-1">
-                            {getStatusIcon(viewModalAnalysis.status)}
-                            {viewModalAnalysis.status.charAt(0).toUpperCase() + viewModalAnalysis.status.slice(1)}
-                          </span>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        {t("Patient Information")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm">
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">{t("Name")}:</span>
+                        <span className="font-medium">
+                          {viewModalAnalysis.patient_id && typeof viewModalAnalysis.patient_id === 'object' 
+                            ? `${viewModalAnalysis.patient_id.first_name || ''} ${viewModalAnalysis.patient_id.last_name || ''}`.trim() 
+                            : t('Unknown')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">{t("Date of Analysis")}:</span>
+                        <span className="font-medium">{new Date(viewModalAnalysis.analysis_date).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between border-b pb-2">
+                        <span className="text-muted-foreground">{t("Status")}:</span>
+                        <Badge variant={viewModalAnalysis.status === 'completed' ? 'secondary' : 'destructive'} className={getStatusColor(viewModalAnalysis.status)}>
+                          {viewModalAnalysis.status.toUpperCase()}
                         </Badge>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    </CardContent>
+                  </Card>
+                </div>
 
-              {/* Analysis Results */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    {t("Analysis Results")}
-                  </CardTitle>
-                </CardHeader>
-                                  <CardContent>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <div className="text-sm leading-relaxed text-foreground">
-                      {formatAnalysisText(viewModalAnalysis.analysis_result || '')}
-                    </div>
+                {/* Right Side: Analysis Results */}
+                <div className="space-y-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="w-5 h-5" />
+                        {t("Analysis Results")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="bg-muted p-4 rounded-lg">
+                        <div className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">
+                          {formatAnalysisText(viewModalAnalysis.analysis_result || '')}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Key Findings */}
+                  {viewModalAnalysis.findings && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <AlertCircle className="w-5 h-5" />
+                          {t("Key Findings")}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={viewModalAnalysis.findings.cavities ? "destructive" : "secondary"}>
+                              {viewModalAnalysis.findings.cavities ? t("Cavities Detected") : t("No Cavities")}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={viewModalAnalysis.findings.infections ? "destructive" : "secondary"}>
+                              {viewModalAnalysis.findings.infections ? t("Infection Signs") : t("No Infection")}
+                            </Badge>
+                          </div>
+                          {viewModalAnalysis.findings.wisdom_teeth && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">
+                                {t("Wisdom Teeth")}: {viewModalAnalysis.findings.wisdom_teeth}
+                              </Badge>
+                            </div>
+                          )}
+                          {viewModalAnalysis.findings.bone_density && (
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">
+                                {t("Bone Density")}: {viewModalAnalysis.findings.bone_density}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-wrap gap-2 pt-4 border-t">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleDownloadReport(viewModalAnalysis)}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {t("Download Report")}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setShowViewModal(false);
+                        setViewModalAnalysis(null);
+                      }}
+                    >
+                      {t("Close")}
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* Key Findings */}
-              {viewModalAnalysis.findings && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5" />
-                      {t("Key Findings")}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <Badge variant={viewModalAnalysis.findings.cavities ? "destructive" : "secondary"}>
-                          {viewModalAnalysis.findings.cavities ? t("Cavities Detected") : t("No Cavities")}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={viewModalAnalysis.findings.infections ? "destructive" : "secondary"}>
-                          {viewModalAnalysis.findings.infections ? t("Infection Signs") : t("No Infection")}
-                        </Badge>
-                      </div>
-                      {viewModalAnalysis.findings.wisdom_teeth && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {t("Wisdom Teeth")}: {viewModalAnalysis.findings.wisdom_teeth}
-                          </Badge>
-                        </div>
-                      )}
-                      {viewModalAnalysis.findings.bone_density && (
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">
-                            {t("Bone Density")}: {viewModalAnalysis.findings.bone_density}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-                             {/* Action Buttons */}
-               <div className="flex flex-wrap gap-2 pt-4 border-t">
-                 <Button 
-                   variant="outline" 
-                   size="sm"
-                   onClick={() => handleDownloadReport(viewModalAnalysis)}
-                 >
-                   <Download className="w-4 h-4 mr-2" />
-                   {t("Download Report")}
-                 </Button>
-                 <Button 
-                   variant="outline" 
-                   size="sm"
-                   onClick={() => {
-                     setShowViewModal(false);
-                     setViewModalAnalysis(null);
-                   }}
-                 >
-                   {t("Close")}
-                 </Button>
-               </div>
-            </div>
+                </div>
+              </div>
           )}
         </DialogContent>
       </Dialog>
@@ -1123,4 +1149,5 @@ Generated on: ${new Date().toLocaleString()}
   );
 };
 
-export default XrayAnalysis; 
+export default XrayAnalysis;
+ 
