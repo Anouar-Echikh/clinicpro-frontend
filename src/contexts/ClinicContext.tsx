@@ -112,8 +112,13 @@ export const ClinicProvider: React.FC<ClinicProviderProps> = ({ children }) => {
   const [currentClinic, setCurrentClinic] = useState<Clinic | null>(null);
   const [userClinics, setUserClinics] = useState<UserClinicRelation[]>([]);
   const [currentUserClinic, setCurrentUserClinic] = useState<UserClinicRelation | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Start loading as true so ProtectedRoute waits for clinic initialization.
+  // This prevents the race condition where ProtectedRoute sees an empty userClinics
+  // list and redirects to /select-clinic before ClinicContext has run its effect.
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Track whether we've done at least one clinic load attempt
+  const clinicInitialized = React.useRef(false);
 
   const { isAuthenticated, user, loading: authLoading } = useAuth();
 
@@ -255,6 +260,7 @@ export const ClinicProvider: React.FC<ClinicProviderProps> = ({ children }) => {
   const loadUserClinics = async (): Promise<void> => {
     try {
       setLoading(true);
+      clinicInitialized.current = true;
       clearError();
 
       console.log('🏥 loadUserClinics - Starting', { userRole: user?.role, userClinicId: user?.clinic_id });
@@ -555,6 +561,12 @@ export const ClinicProvider: React.FC<ClinicProviderProps> = ({ children }) => {
         // Only clear cookies if explicitly not authenticated (not just loading)
         if (!isAuthenticated) {
           clinicCookies.clearClinicData();
+        }
+
+        // Mark as initialized and stop loading so ProtectedRoute doesn't block forever
+        if (!clinicInitialized.current) {
+          clinicInitialized.current = true;
+          setLoading(false);
         }
       }
     } else {
