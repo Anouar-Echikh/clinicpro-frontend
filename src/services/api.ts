@@ -766,6 +766,8 @@ class ApiService {
   getFileUrl(path: string | undefined): string {
     if (!path) return '';
     if (path.startsWith('http')) return path;
+    // Base64 data URLs (e.g. data:image/jpeg;base64,...) must be used directly
+    if (path.startsWith('data:')) return path;
 
     // Remove /api from the base URL to get the root server URL
     const rootUrl = API_BASE_URL.replace(/\/api$/, '');
